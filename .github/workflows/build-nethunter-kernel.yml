@@ -27,7 +27,9 @@ jobs:
       - name: Apply NetHunter patches
         run: |
           cd builder
-          ./patches.sh ../   # kernel root এ patch বসাবে
+          ./build.sh
+          # যখন build.sh চালাবে, "4. Apply NetHunter kernel patches" অপশনটি নির্বাচন করো
+          # তারপর kernel version অনুযায়ী সংশ্লিষ্ট প্যাচ ডিরেক্টরি নির্বাচন করো
 
       - name: Setup clang (toolchain)
         run: |
