@@ -37,24 +37,28 @@ jobs:
 
       - name: Setup toolchains
         run: |
+          wget https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9.tar.gz -O aarch64.tar.gz
+          tar -xf aarch64.tar.gz
+          wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/clang-r450784d.tar.gz -O clang.tar.gz
+          tar -xf clang.tar.gz
+          mv clang-r450784d clang
+          mv aarch64-linux-android-4.9 aarch64
           mkdir -p toolchains
-          cd toolchains
-          git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 clang
-          git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 gcc64
-          git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 gcc32
+          mv clang toolchains/
+          mv aarch64 toolchains/
 
       - name: Export environment
         run: |
           echo "ARCH=arm64" >> $GITHUB_ENV
           echo "SUBARCH=arm64" >> $GITHUB_ENV
-          echo "CROSS_COMPILE=aarch64-linux-android-" >> $GITHUB_ENV
-          echo "CROSS_COMPILE_ARM32=arm-linux-androideabi-" >> $GITHUB_ENV
-          echo "PATH=$GITHUB_WORKSPACE/toolchains/clang/clang-r450784d/bin:$GITHUB_WORKSPACE/toolchains/gcc64/bin:$GITHUB_WORKSPACE/toolchains/gcc32/bin:$PATH" >> $GITHUB_ENV
+          echo "CROSS_COMPILE=$GITHUB_WORKSPACE/toolchains/aarch64/bin/aarch64-linux-android-" >> $GITHUB_ENV
+          echo "CROSS_COMPILE_ARM32=$GITHUB_WORKSPACE/toolchains/aarch64/bin/arm-linux-androideabi-" >> $GITHUB_ENV
+          echo "PATH=$GITHUB_WORKSPACE/toolchains/clang/bin:$PATH" >> $GITHUB_ENV
 
       - name: Build kernel
         run: |
           cd kernel-lts-4.14.356-openela-rc1
-          export PATH=$GITHUB_WORKSPACE/toolchains/clang/clang-r450784d/bin:$GITHUB_WORKSPACE/toolchains/gcc64/bin:$GITHUB_WORKSPACE/toolchains/gcc32/bin:$PATH
+          export PATH=$GITHUB_WORKSPACE/toolchains/clang/bin:$GITHUB_WORKSPACE/toolchains/aarch64/bin:$PATH
           make O=out ARCH=arm64 defconfig
           make -j$(nproc) O=out ARCH=arm64 CC=clang
 
