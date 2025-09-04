@@ -39,23 +39,24 @@ jobs:
         run: |
           mkdir -p toolchains
           cd toolchains
-          git clone https://github.com/crdroid-r/aarch64-linux-android-4.9.git --depth=1 gcc64
-          git clone https://github.com/crdroid-r/clang.git --depth=1 clang
-          
+          git clone https://github.com/aosp-toolchain/aarch64-linux-android-4.9.git --depth=1 gcc64
+          git clone https://github.com/aosp-toolchain/clang.git --depth=1 clang
+
       - name: Export environment
         run: |
           echo "ARCH=arm64" >> $GITHUB_ENV
           echo "SUBARCH=arm64" >> $GITHUB_ENV
+          echo "CLANG_TRIPLE=aarch64-linux-gnu-" >> $GITHUB_ENV
           echo "CROSS_COMPILE=$GITHUB_WORKSPACE/toolchains/gcc64/bin/aarch64-linux-android-" >> $GITHUB_ENV
-          echo "CROSS_COMPILE_ARM32=$GITHUB_WORKSPACE/toolchains/gcc32/bin/arm-linux-androideabi-" >> $GITHUB_ENV
+          echo "CROSS_COMPILE_ARM32=$GITHUB_WORKSPACE/toolchains/gcc64/bin/arm-linux-androideabi-" >> $GITHUB_ENV
           echo "PATH=$GITHUB_WORKSPACE/toolchains/clang/bin:$PATH" >> $GITHUB_ENV
 
       - name: Build kernel
         run: |
           cd kernel-lts-4.14.356-openela-rc1
-          export PATH=$GITHUB_WORKSPACE/toolchains/clang/bin:$GITHUB_WORKSPACE/toolchains/gcc64/bin:$GITHUB_WORKSPACE/toolchains/gcc32/bin:$PATH
+          export PATH=$GITHUB_WORKSPACE/toolchains/clang/bin:$GITHUB_WORKSPACE/toolchains/gcc64/bin:$PATH
           make O=out ARCH=arm64 defconfig
-          make -j$(nproc) O=out ARCH=arm64 CC=clang
+          make -j$(nproc) O=out ARCH=arm64 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=$GITHUB_WORKSPACE/toolchains/gcc64/bin/aarch64-linux-android-
 
       - name: Package AnyKernel3
         run: |
