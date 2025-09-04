@@ -3,6 +3,9 @@ name: Build NetHunter Kernel
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,25 +23,18 @@ jobs:
       - name: Clone NetHunter patches
         run: git clone https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernel-builder.git builder
 
-      - name: Apply NetHunter patches (kernel 4.14)
+      - name: Apply NetHunter patches
         run: |
           PATCH_DIR=$GITHUB_WORKSPACE/builder/patches/4.14
           if [ -d "$PATCH_DIR" ]; then
-            cd $PATCH_DIR
-            echo "Available patches:"
-            ls *.patch 2>/dev/null || echo "No patch files found"
-
-            for patch in *.patch; do
+            for patch in $PATCH_DIR/*.patch; do
               if [ -f "$patch" ]; then
-                echo "Applying $patch ..."
-                git -C $GITHUB_WORKSPACE apply --ignore-whitespace "$patch" || { echo "Failed on $patch"; exit 1; }
+                git -C $GITHUB_WORKSPACE apply --ignore-whitespace "$patch" || exit 1
               fi
             done
-          else
-            echo "Patch directory $PATCH_DIR not found, skipping..."
           fi
 
-      - name: Setup clang (toolchain)
+      - name: Setup toolchains
         run: |
           mkdir -p toolchains
           cd toolchains
@@ -60,15 +56,12 @@ jobs:
           export SUBARCH=arm64
           export PATH=$GITHUB_WORKSPACE/toolchains/clang/clang-r450784d/bin:$GITHUB_WORKSPACE/toolchains/gcc64/bin:$GITHUB_WORKSPACE/toolchains/gcc32/bin:$PATH
           make O=out ARCH=arm64 vendor/sunny_defconfig
-          make -j$(nproc) O=out ARCH=arm64 \
-            CC=clang \
-            CROSS_COMPILE=aarch64-linux-android- \
-            CROSS_COMPILE_ARM32=arm-linux-androideabi-
+          make -j$(nproc) O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-android- CROSS_COMPILE_ARM32=arm-linux-androideabi-
 
       - name: Package AnyKernel3
         run: |
           git clone https://github.com/osm0sis/AnyKernel3.git -b master AnyKernel
-          cp out/arch/arm64/boot/Image.gz-dtb AnyKernel/ || { echo "Kernel image not found"; exit 1; }
+          cp out/arch/arm64/boot/Image.gz-dtb AnyKernel/ || exit 1
           cd AnyKernel
           zip -r9 ../NetHunter-Kernel.zip *
 
