@@ -29,8 +29,12 @@ jobs:
         run: |
           cd builder/patches/4.14
           for patch in *.patch; do
-            echo "Applying $patch"
-            git -C $GITHUB_WORKSPACE apply --ignore-whitespace "$patch" || exit 1
+            if [ -f "$patch" ]; then
+              echo "Applying $patch"
+              git -C $GITHUB_WORKSPACE apply --ignore-whitespace "$patch" || exit 1
+            else
+              echo "Skipping missing patch: $patch"
+            fi
           done
 
       - name: Setup clang (toolchain)
