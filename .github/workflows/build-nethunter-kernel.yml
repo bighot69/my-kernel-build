@@ -3,9 +3,6 @@ name: Build NetHunter Kernel
 on:
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -14,28 +11,31 @@ jobs:
       - name: Checkout kernel source
         uses: actions/checkout@v4
 
-      - name: Install build dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            git wget curl unzip bc bison flex build-essential \
-            libssl-dev libncurses5-dev libncursesw5-dev \
-            ccache python3 python3-pip zip
+          sudo apt-get install -y git wget curl unzip bc bison flex build-essential \
+            libssl-dev libncurses5-dev libncursesw5-dev ccache python3 python3-pip zip
 
-      - name: Clone NetHunter kernel builder (patches only)
+      - name: Clone NetHunter patches
         run: git clone https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernel-builder.git builder
 
       - name: Apply NetHunter patches (kernel 4.14)
         run: |
-          cd builder/patches/4.14
-          PATCHES=$(ls *.patch 2>/dev/null || true)
-          if [ -z "$PATCHES" ]; then
-            echo "No patches found for 4.14, skipping..."
-          else
-            for patch in $PATCHES; do
-              echo "Applying $patch"
-              git -C $GITHUB_WORKSPACE apply --ignore-whitespace "$patch" || exit 1
+          PATCH_DIR=$GITHUB_WORKSPACE/builder/patches/4.14
+          if [ -d "$PATCH_DIR" ]; then
+            cd $PATCH_DIR
+            echo "Available patches:"
+            ls *.patch 2>/dev/null || echo "No patch files found"
+
+            for patch in *.patch; do
+              if [ -f "$patch" ]; then
+                echo "Applying $patch ..."
+                git -C $GITHUB_WORKSPACE apply --ignore-whitespace "$patch" || { echo "Failed on $patch"; exit 1; }
+              fi
             done
+          else
+            echo "Patch directory $PATCH_DIR not found, skipping..."
           fi
 
       - name: Setup clang (toolchain)
@@ -68,7 +68,7 @@ jobs:
       - name: Package AnyKernel3
         run: |
           git clone https://github.com/osm0sis/AnyKernel3.git -b master AnyKernel
-          cp out/arch/arm64/boot/Image.gz-dtb AnyKernel/
+          cp out/arch/arm64/boot/Image.gz-dtb AnyKernel/ || { echo "Kernel image not found"; exit 1; }
           cd AnyKernel
           zip -r9 ../NetHunter-Kernel.zip *
 
