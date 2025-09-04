@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout kernel source
-        uses: actions/checkout@v4   # v3 deprecated হয়ে গেছে, তাই v4
+        uses: actions/checkout@v3
 
       - name: Install build dependencies
         run: |
@@ -21,14 +21,16 @@ jobs:
             libssl-dev libncurses5-dev libncursesw5-dev \
             ccache python3 python3-pip zip
 
-      - name: Clone NetHunter kernel builder
+      - name: Clone NetHunter patches
         run: git clone https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernel-builder.git builder
 
-      - name: Apply NetHunter patches (auto, non-interactive)
+      - name: Apply NetHunter patches
         run: |
-          cd builder
-          chmod +x kernel-builder.sh
-          echo "4" | ./kernel-builder.sh ../   # "4" মানে patch apply
+          cd builder/patches
+          for patch in $(find . -type f -name "*.patch"); do
+            echo "Applying $patch"
+            git -C $GITHUB_WORKSPACE apply --ignore-whitespace "$patch" || exit 1
+          done
 
       - name: Setup clang (toolchain)
         run: |
