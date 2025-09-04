@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout kernel source
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4   # v3 deprecated হয়ে গেছে, v4 ব্যবহার করো
 
       - name: Install build dependencies
         run: |
@@ -27,9 +27,8 @@ jobs:
       - name: Apply NetHunter patches
         run: |
           cd builder
-          ./build.sh
-          # যখন build.sh চালাবে, "4. Apply NetHunter kernel patches" অপশনটি নির্বাচন করো
-          # তারপর kernel version অনুযায়ী সংশ্লিষ্ট প্যাচ ডিরেক্টরি নির্বাচন করো
+          chmod +x patches.sh
+          ./patches.sh ../   # ../ মানে parent directory → kernel source
 
       - name: Setup clang (toolchain)
         run: |
