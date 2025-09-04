@@ -48,8 +48,6 @@ jobs:
         run: |
           echo "ARCH=arm64" >> $GITHUB_ENV
           echo "SUBARCH=arm64" >> $GITHUB_ENV
-          echo "CROSS_COMPILE=$GITHUB_WORKSPACE/toolchains/gcc64/bin/aarch64-linux-android-" >> $GITHUB_ENV
-          echo "CROSS_COMPILE_ARM32=$GITHUB_WORKSPACE/toolchains/gcc32/bin/arm-linux-androideabi-" >> $GITHUB_ENV
           echo "PATH=$GITHUB_WORKSPACE/toolchains/clang/clang-r450784d/bin:$GITHUB_WORKSPACE/toolchains/gcc64/bin:$GITHUB_WORKSPACE/toolchains/gcc32/bin:$PATH" >> $GITHUB_ENV
 
       - name: Build kernel
@@ -57,7 +55,15 @@ jobs:
           cd kernel-lts-4.14.356-openela-rc1
           export PATH=$GITHUB_WORKSPACE/toolchains/clang/clang-r450784d/bin:$GITHUB_WORKSPACE/toolchains/gcc64/bin:$GITHUB_WORKSPACE/toolchains/gcc32/bin:$PATH
           make O=out ARCH=arm64 defconfig
-          make -j$(nproc) O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1
+          # Try Clang IAS first with verbose logging
+          if ! make -j$(nproc) O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 V=1; then
+            echo "Clang IAS failed, falling back to GNU binutils..."
+            make -j$(nproc) O=out ARCH=arm64 \
+              CC="clang --target=aarch64-linux-gnu" \
+              CROSS_COMPILE=aarch64-linux-gnu- \
+              CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+              V=1
+          fi
 
       - name: Package AnyKernel3
         run: |
