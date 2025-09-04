@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout kernel source
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install dependencies
@@ -25,11 +25,12 @@ jobs:
 
       - name: Apply NetHunter patches
         run: |
+          cd kernel-lts-4.14.356-openela-rc1
           PATCH_DIR=$GITHUB_WORKSPACE/builder/patches/4.14
           if [ -d "$PATCH_DIR" ]; then
             for patch in $PATCH_DIR/*.patch; do
               if [ -f "$patch" ]; then
-                git -C $GITHUB_WORKSPACE apply --ignore-whitespace "$patch" || exit 1
+                git apply --ignore-whitespace "$patch" || exit 1
               fi
             done
           fi
@@ -52,16 +53,15 @@ jobs:
 
       - name: Build kernel
         run: |
-          export ARCH=arm64
-          export SUBARCH=arm64
+          cd kernel-lts-4.14.356-openela-rc1
           export PATH=$GITHUB_WORKSPACE/toolchains/clang/clang-r450784d/bin:$GITHUB_WORKSPACE/toolchains/gcc64/bin:$GITHUB_WORKSPACE/toolchains/gcc32/bin:$PATH
           make O=out ARCH=arm64 vendor/sunny_defconfig
-          make -j$(nproc) O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-android- CROSS_COMPILE_ARM32=arm-linux-androideabi-
+          make -j$(nproc) O=out ARCH=arm64 CC=clang
 
       - name: Package AnyKernel3
         run: |
           git clone https://github.com/osm0sis/AnyKernel3.git -b master AnyKernel
-          cp out/arch/arm64/boot/Image.gz-dtb AnyKernel/ || exit 1
+          cp kernel-lts-4.14.356-openela-rc1/out/arch/arm64/boot/Image.gz-dtb AnyKernel/ || exit 1
           cd AnyKernel
           zip -r9 ../NetHunter-Kernel.zip *
 
