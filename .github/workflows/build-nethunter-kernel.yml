@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout kernel source
-        uses: actions/checkout@v4   # v3 deprecated হয়ে গেছে, v4 ব্যবহার করো
+        uses: actions/checkout@v4   # v3 deprecated হয়ে গেছে, তাই v4
 
       - name: Install build dependencies
         run: |
@@ -24,11 +24,11 @@ jobs:
       - name: Clone NetHunter kernel builder
         run: git clone https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernel-builder.git builder
 
-      - name: Apply NetHunter patches
+      - name: Apply NetHunter patches (auto, non-interactive)
         run: |
           cd builder
-          chmod +x patches.sh
-          ./patches.sh ../   # ../ মানে parent directory → kernel source
+          chmod +x kernel-builder.sh
+          echo "4" | ./kernel-builder.sh ../   # "4" মানে patch apply
 
       - name: Setup clang (toolchain)
         run: |
