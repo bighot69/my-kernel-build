@@ -55,7 +55,7 @@ jobs:
         run: |
           cd kernel-lts-4.14.356-openela-rc1
           export PATH=$GITHUB_WORKSPACE/toolchains/clang/clang-r450784d/bin:$GITHUB_WORKSPACE/toolchains/gcc64/bin:$GITHUB_WORKSPACE/toolchains/gcc32/bin:$PATH
-          make O=out ARCH=arm64 vendor/sunny_defconfig
+          make O=out ARCH=arm64 defconfig
           make -j$(nproc) O=out ARCH=arm64 CC=clang
 
       - name: Package AnyKernel3
